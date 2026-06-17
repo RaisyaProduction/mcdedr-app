@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MC DEDE SYSTEM</title>
+    <!-- Manifest terintegrasi -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"MC DEDE SYSTEM","short_name":"McDede","start_url":"index.html","display":"standalone","background_color":"%23ffffff","theme_color":"%232563eb","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3061/3061341.png","sizes":"192x192","type":"image/png"}]}'>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 p-2" x-data="app()">
+
+    <!-- LOGIN SECTION -->
+    <div x-show="!isLoggedIn" class="max-w-sm mx-auto bg-white p-6 rounded-xl shadow-lg mt-10">
+        <h1 class="text-xl font-bold text-center mb-4">MC DEDE SYSTEM</h1>
+        <button id="btnInstall" class="hidden w-full bg-indigo-600 text-white p-2 rounded mb-4 font-bold text-sm">📥 Instal ke Layar HP</button>
+        <input type="text" x-model="login.user" placeholder="Username" class="w-full border p-2 mb-2 rounded text-sm">
+        <input type="password" x-model="login.pass" placeholder="Password" class="w-full border p-2 mb-2 rounded text-sm">
+        <button @click="handleLogin()" class="w-full bg-blue-600 text-white p-2 rounded text-sm font-bold">LOGIN</button>
+    </div>
+
+    <!-- MAIN APP SECTION -->
+    <div x-show="isLoggedIn" class="max-w-md mx-auto" x-cloak>
+        <div class="flex justify-between items-center mb-4 bg-white p-2 rounded shadow">
+            <span class="font-bold">Dashboard MC DEDE</span>
+            <button @click="isLoggedIn=false" class="text-xs bg-red-500 text-white px-2 py-1 rounded">Logout</button>
+        </div>
+
+        <!-- MASTER SYAIR -->
+        <div class="bg-white p-4 rounded shadow mb-4">
+            <h2 class="font-bold mb-2">1. Master Syair</h2>
+            <input x-model="form.nomor" placeholder="Nomor" class="w-full border p-1 mb-1 rounded text-sm">
+            <input x-model="form.arti" placeholder="Arti" class="w-full border p-1 mb-1 rounded text-sm">
+            <button @click="simpanSyair()" class="w-full bg-green-600 text-white py-1 rounded text-sm">Simpan Syair</button>
+        </div>
+
+        <!-- GENERATOR BBFS -->
+        <div class="bg-white p-4 rounded shadow mb-4">
+            <h2 class="font-bold mb-2">2. Generator BBFS</h2>
+            <input x-model="bbfsInput" placeholder="Angka (contoh: 123456)" class="w-full border p-1 mb-1 rounded text-sm">
+            <button @click="generate()" class="w-full bg-blue-600 text-white py-1 rounded text-sm">Generate</button>
+            <div class="mt-2 p-2 bg-black text-green-400 text-xs font-mono rounded overflow-x-auto" x-text="bbfsHasil"></div>
+        </div>
+
+        <!-- RESULT -->
+        <div class="bg-white p-4 rounded shadow">
+            <h2 class="font-bold mb-2">3. Result MC</h2>
+            <input x-model="res.angka" placeholder="Hasil 4D" class="w-full border p-1 mb-1 rounded text-sm">
+            <button @click="simpanRes()" class="w-full bg-green-600 text-white py-1 rounded text-sm">Simpan Result</button>
+        </div>
+    </div>
+
+    <script>
+        // SERVICE WORKER & INSTALASI
+        const swUrl = URL.createObjectURL(new Blob([`self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));`], {type: 'application/javascript'}));
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register(swUrl);
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('btnInstall').style.display = 'block'; });
+        document.getElementById('btnInstall').addEventListener('click', () => { deferredPrompt.prompt(); });
+
+        function app() {
+            return {
+                isLoggedIn: false,
+                login: {user:'', pass:''},
+                form: {nomor:'', arti:''},
+                bbfsInput: '', bbfsHasil: '',
+                res: {angka:''},
+                syair: JSON.parse(localStorage.getItem('syair')||'[]'),
+
+                handleLogin() { 
+                    if(this.login.user=='McDede' && this.login.pass=='002886') this.isLoggedIn=true; 
+                    else alert('Login Gagal!'); 
+                },
+                simpanSyair() { this.syair.push({...this.form}); localStorage.setItem('syair', JSON.stringify(this.syair)); alert('Tersimpan!'); },
+                generate() { this.bbfsHasil = this.bbfsInput.split('').join('*'); },
+                simpanRes() { localStorage.setItem('lastRes', this.res.angka); alert('Result Tersimpan: ' + this.res.angka); }
+            }
+        }
+    </script>
+</body>
+</html>
