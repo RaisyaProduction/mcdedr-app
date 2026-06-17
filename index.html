@@ -2,92 +2,125 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MC DEDE SYSTEM</title>
+    <!-- TAMBAHAN: Manifest PWA -->
     <link rel="manifest" href='data:application/manifest+json,{"name":"MC DEDE SYSTEM","short_name":"McDede","start_url":"index.html","display":"standalone","background_color":"%23ffffff","theme_color":"%232563eb","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3061/3061341.png","sizes":"192x192","type":"image/png"}]}'>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-100 p-4" x-data="app()">
 
-    <!-- LOGIN -->
-    <div x-show="!isLoggedIn" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md mt-10">
-        <h1 class="text-2xl font-bold text-center mb-4">MC DEDE</h1>
-        <button id="btnInstall" class="hidden w-full bg-indigo-600 text-white p-3 rounded mb-4 font-bold">📥 Instal Aplikasi</button>
-        <input type="text" x-model="login.user" placeholder="Username" class="w-full border p-2 mb-2 rounded">
-        <input type="password" x-model="login.pass" placeholder="Password" class="w-full border p-2 mb-2 rounded">
-        <button @click="handleLogin()" class="w-full bg-blue-600 text-white p-2 rounded">Login</button>
+    <!-- TOMBOL INSTAL (Ditambahkan untuk memicu instalasi) -->
+    <div id="installContainer" class="hidden max-w-md mx-auto mb-4">
+        <button id="btnInstall" class="w-full bg-indigo-600 text-white p-3 rounded font-bold shadow-lg">📥 Instal Aplikasi ke HP</button>
     </div>
 
-    <!-- APP -->
-    <div x-show="isLoggedIn" class="max-w-4xl mx-auto" x-cloak>
+    <!-- LOGIN & LUPA PASSWORD -->
+    <div x-show="!isLoggedIn" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md mt-10">
+        <div x-show="!lupaMode">
+            <h1 class="text-2xl font-bold text-center mb-4">MC DEDE</h1>
+            <input type="text" x-model="login.user" placeholder="Username" class="w-full border p-2 mb-2 rounded">
+            <input type="password" x-model="login.pass" placeholder="Password" class="w-full border p-2 mb-2 rounded">
+            <button @click="handleLogin()" class="w-full bg-blue-600 text-white p-2 rounded">Login</button>
+            <p @click="lupaMode = true" class="text-sm text-blue-500 mt-4 cursor-pointer text-center underline">Lupa Password?</p>
+        </div>
+        <div x-show="lupaMode">
+            <h2 class="text-xl font-bold mb-4">Konfirmasi Reset</h2>
+            <input type="email" x-model="konf.email" placeholder="Email Terdaftar" class="w-full border p-2 mb-2 rounded">
+            <input type="text" x-model="konf.hp" placeholder="No HP Terdaftar" class="w-full border p-2 mb-2 rounded">
+            <button @click="cekReset()" class="w-full bg-green-600 text-white p-2 rounded">Konfirmasi & Reset</button>
+            <button @click="lupaMode = false" class="w-full bg-gray-400 text-white p-2 rounded mt-2">Batal</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div x-show="isLoggedIn" class="max-w-4xl mx-auto">
         <button @click="isLoggedIn = false" class="bg-red-500 text-white px-4 py-1 rounded mb-4">Logout</button>
 
         <!-- 1. MASTER SYAIR -->
         <div class="bg-white p-6 rounded shadow mb-6">
-            <h2 class="text-xl font-bold mb-4">1. Master Syair</h2>
+            <h2 class="text-xl font-bold mb-4">1. MENU MASTER SYAIR</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
                 <input x-model="form.nomor" placeholder="Nomor" class="border p-2 rounded">
-                <input x-model="form.arti" placeholder="Arti" class="border p-2 rounded">
-                <select x-model="form.kategori" class="border p-2 rounded"><option>Figur</option><option>Risau</option><option>Nakal</option><option>Kotor</option><option>Hukuman</option><option>Kematian</option></select>
+                <input x-model="form.arti" placeholder="Arti Syair" class="border p-2 rounded">
+                <select x-model="form.kategori" class="border p-2 rounded">
+                    <option>Figur</option><option>Risau</option><option>Nakal</option>
+                    <option>Kotor</option><option>Hukuman</option><option>Kematian</option>
+                </select>
             </div>
             <button @click="simpanData()" class="bg-green-600 text-white px-4 py-2 rounded">Simpan Data</button>
-        </div>
-
-        <!-- 2. GENERATOR -->
-        <div class="bg-white p-6 rounded shadow mb-6">
-            <h2 class="text-xl font-bold mb-4">2. Generator & Filter</h2>
-            <input x-model="bbfsInput" placeholder="Input BBFS" class="border p-2 w-full rounded mb-2">
-            <button @click="generateBBFS()" class="bg-blue-600 text-white px-6 py-2 rounded">Generate</button>
-            <div class="mt-4 p-4 bg-gray-900 text-green-400 font-mono rounded h-20 overflow-auto" x-text="bbfsHasil.join('*')"></div>
-        </div>
-
-        <!-- 3 & 4. RESULT & TABEL -->
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-xl font-bold mb-4">3 & 4. Result & Data</h2>
-            <div class="grid grid-cols-2 gap-2 mb-4">
-                <input x-model="resultForm.periode" placeholder="Periode" class="border p-2 rounded">
-                <input x-model="resultForm.angka" placeholder="4 Angka" class="border p-2 rounded">
-            </div>
-            <button @click="simpanResult()" class="bg-green-600 text-white px-6 py-2 rounded mb-6">Simpan Result</button>
-            
-            <table class="w-full text-sm border-collapse border">
-                <thead><tr class="bg-gray-200"><th>Periode</th><th>Result</th><th>Aksi</th></tr></thead>
+            <table class="w-full border-collapse border mt-4 text-xs">
+                <thead><tr class="bg-gray-200"><th class="border p-2">Nomor</th><th class="border p-2">Arti</th><th class="border p-2">Kategori</th><th class="border p-2">Aksi</th></tr></thead>
                 <tbody>
-                    <template x-for="(r, i) in daftarResult" :key="i">
-                        <tr class="border-b">
-                            <td class="p-2" x-text="r.periode"></td>
-                            <td class="p-2 font-bold" x-text="r.angka"></td>
-                            <td class="p-2"><button @click="hapusResult(i)" class="text-red-500">Hapus</button></td>
+                    <template x-for="(item, index) in daftarSyair" :key="index">
+                        <tr>
+                            <td class="border p-2" x-text="item.nomor"></td>
+                            <td class="border p-2" x-text="item.arti"></td>
+                            <td class="border p-2" x-text="item.kategori"></td>
+                            <td class="border p-2 text-center"><button @click="hapusData(index)" class="text-red-600">Hapus</button></td>
                         </tr>
                     </template>
                 </tbody>
             </table>
         </div>
+
+        <!-- 4. RESULT MC -->
+        <div class="bg-white p-6 rounded shadow mt-6">
+            <h2 class="text-xl font-bold mb-4">4. MENU RESULT MC</h2>
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <input x-model="resultForm.periode" placeholder="Periode" class="border p-2 rounded">
+                <select x-model="resultForm.pasar" class="border p-2 rounded"><option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option><option>P6</option></select>
+                <input x-model="resultForm.angka" @input="pecahAngka()" placeholder="4 Angka Result" class="border p-2 rounded col-span-2">
+            </div>
+            <button @click="simpanResult()" class="bg-green-600 text-white px-6 py-2 rounded mb-4">Simpan Result</button>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border text-xs">
+                    <thead><tr class="bg-gray-200"><th>Periode/Pasar</th><th>Result</th><th>2DD(Arti)</th><th>2DT(Arti)</th><th>2DB(Arti)</th><th>Aksi</th></tr></thead>
+                    <tbody>
+                        <template x-for="(r, index) in daftarResult" :key="index">
+                            <tr class="border text-center">
+                                <td class="p-2" x-text="r.periode + '/' + r.pasar"></td>
+                                <td class="p-2 font-bold" x-text="r.angka"></td>
+                                <td class="p-2" x-text="r.d2d + ' (' + getArti(r.d2d) + ')'"></td>
+                                <td class="p-2" x-text="r.d2t + ' (' + getArti(r.d2t) + ')'"></td>
+                                <td class="p-2" x-text="r.d2b + ' (' + getArti(r.d2b) + ')'"></td>
+                                <td class="p-2"><button @click="daftarResult.splice(index,1); localStorage.setItem('res', JSON.stringify(daftarResult))" class="text-red-600">Hapus</button></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
+        // TAMBAHAN: Service Worker untuk Instalasi & Offline
         const swBlob = new Blob([`self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));`], {type: 'application/javascript'});
         if ('serviceWorker' in navigator) navigator.serviceWorker.register(URL.createObjectURL(swBlob));
         
         let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('btnInstall').style.display = 'block'; });
-        document.getElementById('btnInstall').addEventListener('click', () => { deferredPrompt.prompt(); });
+        window.addEventListener('beforeinstallprompt', (e) => { 
+            e.preventDefault(); 
+            deferredPrompt = e; 
+            document.getElementById('installContainer').classList.remove('hidden'); 
+        });
+        document.getElementById('btnInstall').addEventListener('click', () => { if(deferredPrompt) deferredPrompt.prompt(); });
 
         function app() {
             return {
-                isLoggedIn: false, login: {user:'', pass:''},
-                form: {nomor:'', arti:'', kategori:'Figur'},
-                daftarSyair: JSON.parse(localStorage.getItem('syairList')||'[]'),
-                bbfsInput:'', bbfsHasil:[],
-                resultForm: {periode:'', angka:''},
-                daftarResult: JSON.parse(localStorage.getItem('resList')||'[]'),
-                
-                handleLogin() { if(this.login.user=='McDede' && this.login.pass=='002886') this.isLoggedIn=true; else alert('Login Salah!'); },
-                simpanData() { this.daftarSyair.push({...this.form}); localStorage.setItem('syairList', JSON.stringify(this.daftarSyair)); },
-                generateBBFS() { this.bbfsHasil = this.bbfsInput.split(''); },
-                simpanResult() { this.daftarResult.push({...this.resultForm}); localStorage.setItem('resList', JSON.stringify(this.daftarResult)); },
-                hapusResult(i) { this.daftarResult.splice(i,1); localStorage.setItem('resList', JSON.stringify(this.daftarResult)); }
+                isLoggedIn: false, lupaMode: false, login: { user: '', pass: '' }, konf: { email: '', hp: '' },
+                form: { nomor: '', arti: '', kategori: 'Figur' }, daftarSyair: JSON.parse(localStorage.getItem('syairList')) || [],
+                resultForm: { periode: '', pasar: 'P1', angka: '', d2d: '', d2t: '', d2b: '' },
+                daftarResult: JSON.parse(localStorage.getItem('res')) || [],
+
+                handleLogin() { if (this.login.user === 'McDede' && this.login.pass === '002886') this.isLoggedIn = true; else alert('Login Salah!'); },
+                cekReset() { if (this.konf.email === 'dede sugionoai@gmail.com' && this.konf.hp === '081220285226') { alert('Password: 002886'); this.lupaMode = false; } else alert('Data tidak cocok!'); },
+                simpanData() { this.daftarSyair.push({ ...this.form }); localStorage.setItem('syairList', JSON.stringify(this.daftarSyair)); this.form.nomor = ''; },
+                hapusData(index) { this.daftarSyair.splice(index, 1); localStorage.setItem('syairList', JSON.stringify(this.daftarSyair)); },
+                pecahAngka() { if(this.resultForm.angka.length===4) { this.resultForm.d2d=this.resultForm.angka.substring(0,2); this.resultForm.d2t=this.resultForm.angka.substring(1,3); this.resultForm.d2b=this.resultForm.angka.substring(2,4); } },
+                getArti(n) { let f = this.daftarSyair.find(i => i.nomor === n); return f ? f.arti : '-'; },
+                simpanResult() { this.daftarResult.push({...this.resultForm}); localStorage.setItem('res', JSON.stringify(this.daftarResult)); this.resultForm = { periode: '', pasar: 'P1', angka: '', d2d: '', d2t: '', d2b: '' }; }
             }
         }
     </script>
